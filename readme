@@ -1,0 +1,50 @@
+# Request for comments: a new CLJS compiler interface
+
+ClojureScript is super rad and deserves rad third-party tooling.
+This document outlines potential improvements in the ClojureScript compiler's public interface and the use cases that motivate them.
+If you can think of something that one *should* be able to do with ClojureScript but cannot with the current implementation, please open up and issue or pull request with a description of your use case and what a public API would need to provide to support it.
+Please attach questions directly to the corresponding line of this document at a specific commit.
+
+
+## Things I'd like to be able to do
+
++ Compile multi-namespace, custom-macro-using ClojureScript programs without touching the file system
++ Retrieve per-namespace errors/warnings as data (e.g., maps containing warning types, line numbers, and so on)
++ Retrieve per-namespace dependency information: "This namespace provides vars A, B, C and requires vars X, Y, Z from namespaces U, V, W"
++ Get source mappings between ClojureScript <-> Raw JS <-> Optimized JS
++ Integrate ClojureScript with my own caching/memoization scheme, without having to worry about ClojureScript caching internally (if ClojureScript caches internally, then its invalidation scheme must be bulletproof)
+
+
+## The current implementation
+
+Tooling is difficult to build on top of the ClojureScript compiler's current interface: `cljs.closure/build`.
+This interface tangles together inputs (accepting files, directories, strings, URLs, lists, or vectors) and outputs (writing to disk or returning a string of JavaScript).
+Furthermore, there is no interface for retrieving as data:
+
++ namespace dependency information
++ file AST (pre or post macro-transformed)
++ errors/warnings (about, e.g., references to undefined vars)
+
+even though the compiler calculates all these things internally during the compilation process.
+Finally, the current compiler architecture is tightly coupled together with mutable state and the disk: between the `cljs.closure`, `cljs.analyzer`, and `cljs.compiler` namespaces, there are:
+
++ 49 references to `clojure.java.io`
++ 14 atoms
++ 15 dynamic vars
+
+
+## A potential new interface
+
+(Note: I'm not 100% convinced all of this is a good idea, but I'm writing it imperatively for clarity.)
+
+The interface should be split into two parts: "easy" and "simple".
+
+The "easy" interface should be a single function of `[strings-of-cljs, optsmap]` that returns a string of JavaScript.
+It does not traverse the filesystem, nor does it write output to disk.
+Any Clojure macros required by the ClojureScript source are assumed to be available on the classpath.
+
+The "simple" interface consists of several functions, corresponding to the
+
+    compile -> add-dependencies -> optimize -> output
+    
+pipeline. 

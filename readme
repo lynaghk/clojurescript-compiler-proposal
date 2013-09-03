@@ -13,6 +13,8 @@ Please attach questions directly to the corresponding line of this document at a
 + Retrieve per-namespace dependency information: "This namespace provides vars A, B, C and requires vars X, Y, Z from namespaces U, V, W"
 + Get source mappings between ClojureScript <-> Raw JS <-> Optimized JS
 + Integrate ClojureScript with my own caching/memoization scheme, without having to worry about ClojureScript caching internally (if ClojureScript caches internally, then its invalidation scheme must be bulletproof)
++ Incrementally add dependencies and code and have new JavaScript emitted that references already compiled code so that I can add new code to the browser but not duplicate/over-write existing dependencies.
++ Refer to libraries/JAR files that are not on the classpath (dynamically add libraries)
 
 
 ## The current implementation

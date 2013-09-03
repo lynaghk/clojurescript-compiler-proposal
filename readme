@@ -39,6 +39,8 @@ Finally, the current compiler architecture is tightly coupled together with muta
 
 (Note: I'm not 100% convinced all of this is a good idea, but I'm writing it imperatively for clarity.)
 
+All public API functions should live in a new namespace, `cljs.api`.
+
 The interface should be split into two parts: "easy" and "simple".
 
 The "easy" interface should be a single function of `[strings-of-cljs, optsmap]` that returns a string of JavaScript.

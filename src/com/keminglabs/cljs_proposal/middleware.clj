@@ -1,5 +1,6 @@
 (ns com.keminglabs.cljs-proposal.middleware
   (:require [cljs.analyzer :as ana]
+            [cljs.compiler :as compiler]
             [clojure.set :refer [subset?]])
   (:import java.io.StringReader))
 
@@ -47,3 +48,12 @@
                       (select-keys namespace-map-keys))]
 
     (assoc m :expressions expressions :namespace namespace)))
+
+(defn with-js
+  "Adds :js key to the compilation map, from emission of :expressions."
+  [compilation-map]
+  (let [{:keys [expressions] :as m} compilation-map]
+    (assoc m :js (with-out-str
+                   (doseq [e expressions]
+                     (compiler/emit e))))))
+

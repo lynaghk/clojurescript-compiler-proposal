@@ -29,3 +29,15 @@
         :uses-macros nil
         :imports nil
         :excludes #{}}))
+
+
+
+
+
+;;Integration test
+(let [js (-> {:cljs-src cljs-sample}
+             with-forms
+             with-analysis
+             with-js
+             :js)]
+  (is (not (empty? js))))

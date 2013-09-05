@@ -45,10 +45,11 @@ The interface should be split into two parts: "easy" and "simple".
 
 The "easy" interface should be a single function of `[strings-of-cljs, optsmap]` that returns a string of JavaScript.
 It does not traverse the filesystem, nor does it write output to disk.
-Any Clojure macros required by the ClojureScript source are assumed to be available on the classpath.
+Any Clojure macros required by the ClojureScript source are assumed to already be defined in the appropriate JVM Clojure namespace.
 
-The "simple" interface consists of several functions, corresponding to the
+The "simple" interface is Ring-style middleware on the scale of namespaces.
+See middleware.clj for an example.
+The user provides the src string for each namespace and then runs through all the middleware in a compile function.
+The result is "compilation map".
 
-    compile -> add-dependencies -> optimize -> output
-    
-pipeline. 
+Once the user has all of his or her compilation maps in hand (including compilation maps from all libraries), they're sorted in dependency order, given to Google Closure to optimize, and the final JavaScript is returned as a string that the user can then write to disk.

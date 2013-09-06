@@ -5,6 +5,8 @@ This document outlines potential improvements in the ClojureScript compiler's pu
 If you can think of something that one *should* be able to do with ClojureScript but cannot with the current implementation, please open up and issue or pull request with a description of your use case and what a public API would need to provide to support it.
 Please attach questions directly to the corresponding line of this document at a specific commit.
 
+Read Fogus's blog posts on this subject: http://blog.fogus.me/tag/clj-compilation/
+
 
 ## Things I'd like to be able to do
 

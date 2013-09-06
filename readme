@@ -11,10 +11,14 @@ Please attach questions directly to the corresponding line of this document at a
 + Compile multi-namespace, custom-macro-using ClojureScript programs without touching the file system
 + Retrieve per-namespace errors/warnings as data (e.g., maps containing warning types, line numbers, and so on)
 + Retrieve per-namespace dependency information: "This namespace provides vars A, B, C and requires vars X, Y, Z from namespaces U, V, W"
-+ Get source mappings between ClojureScript <-> Raw JS <-> Optimized JS
 + Integrate ClojureScript with my own caching/memoization scheme, without having to worry about ClojureScript caching internally (if ClojureScript caches internally, then its invalidation scheme must be bulletproof)
-+ Append new sources to already compiled/optimized code; the newly emitted JavaScript should reference the previously compiled code rather than duplicating/overwriting existing dependencies.
 + Compile ClojureScript and JavaScript sources that are not on the classpath
+
+
+## Would be nice to have, but may be too difficult
+
++ Append new sources to already compiled/optimized code; the newly emitted JavaScript should reference the previously compiled code rather than duplicating/overwriting existing dependencies.
++ Get source mappings between ClojureScript <-> Raw JS <-> Optimized JS
 
 
 ## The current implementation
@@ -43,14 +47,14 @@ All public API functions should live in a new namespace, `cljs.api`.
 
 The interface should be split into two parts: "easy" and "simple".
 
-The "easy" interface should be a single function of `[strings-of-cljs, optsmap]` that returns a string of JavaScript.
+The "easy" interface should be a single function of `[coll-of-cljs-strings, optsmap]` that returns a string of JavaScript.
 It does not traverse the filesystem, nor does it write output to disk.
 Any Clojure macros required by the ClojureScript source are assumed to already be defined in the appropriate JVM Clojure namespace.
 
 The "simple" interface is Ring-style middleware on the scale of namespaces.
 See `middleware.clj` for an example.
-The user provides the src string for each namespace and then runs through all the middleware in a compile function.
-The result is "compilation map".
+The user provides the source string for each namespace, which is packaged up as a "compilation map" (analogous to Ring's request/response maps).
+The compilation map is run through multiple middlewares to read forms, analyze forms, emit JavaScript, and so on.
 
 Once the user has all of his or her compilation maps in hand (including compilation maps from all libraries), they're sorted in dependency order, given to Google Closure to optimize, and the final JavaScript is returned as a string that the user can then write to disk.
 

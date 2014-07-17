@@ -24,9 +24,9 @@
        {:name 'foo
         :doc "Awesome namespace"
         :requires '{a.b a.b}
-        :requires-macros nil
+        :require-macros nil
         :uses nil
-        :uses-macros nil
+        :use-macros nil
         :imports nil
         :excludes #{}}))
 

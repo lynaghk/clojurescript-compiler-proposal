@@ -1,5 +1,6 @@
 (ns com.keminglabs.cljs-proposal.middleware
   (:require [cljs.analyzer :as ana]
+            [cljs.env :as env]
             [cljs.compiler :as compiler]
             [clojure.set :refer [subset?]])
   (:import java.io.StringReader))
@@ -10,9 +11,8 @@
   [compilation-map]
   ;;TODO document ex-info map shape
   (let [{:keys [cljs-src] :as m} compilation-map]
-    (assoc m :forms (ana/forms-seq (StringReader. cljs-src)))))
-
-
+    (env/ensure
+     (assoc m :forms (doall (ana/forms-seq (StringReader. cljs-src)))))))
 
 (defn expression-map?
   "From defacto specification in docstring of cljs.analyzer/analyze."
@@ -20,7 +20,8 @@
   (subset? #{:form :op :env} (set (keys x))))
 
 (def namespace-map-keys
-  #{:name :doc :requires :requires-macros :uses :uses-macros :imports :excludes})
+  #{:name :doc :requires :require-macros :uses :use-macros :imports :excludes})
+
 (defn namespace-map?
   [x]
   (subset? namespace-map-keys (set (keys x))))
@@ -29,9 +30,9 @@
   {:name 'cljs.user
    :doc nil
    :requires nil
-   :requires-macros nil
+   :require-macros nil
    :uses nil
-   :uses-macros nil
+   :use-macros nil
    :imports nil
    :excludes #{}})
 
@@ -40,9 +41,12 @@
    All forms should be part of the same namespace."
   [compilation-map]
   (let [{:keys [forms] :as m} compilation-map
-        expressions (binding [ana/*cljs-ns* 'cljs.user]
-                      (doall (for [form forms]
-                               (ana/analyze (ana/empty-env) form))))
+        expressions (env/ensure
+                     (binding [ana/*cljs-ns* 'cljs.user]
+                       (doall (for [form forms]
+                                (ana/analyze (assoc (ana/empty-env) :ns (ana/get-namespace ana/*cljs-ns*))
+                                             form)))))
+
         namespace (-> (or (first (filter namespace-map? expressions))
                           cljs-user-namespace-map)
                       (select-keys namespace-map-keys))]
@@ -56,4 +60,3 @@
     (assoc m :js (with-out-str
                    (doseq [e expressions]
                      (compiler/emit e))))))
-

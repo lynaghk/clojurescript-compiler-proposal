@@ -2,7 +2,7 @@
   (:require [com.keminglabs.cljs-proposal.middleware :as m]
             [cljs.closure :as closure]
             [cljs.js-deps :as deps])
-  (:import (com.google.javascript.jscomp DependencyOptions SourceFile)))
+  (:import (com.google.javascript.jscomp DependencyOptions SourceFile CheckLevel)))
 
 (defn compile-cljs
   "Fully realized compilation map for provided ClojureScript string."
@@ -20,21 +20,31 @@
 
         compiler-options (doto (closure/make-options {:optimizations :whitespace})
                            (.setClosurePass true)
+                           (.setCheckProvides CheckLevel/WARNING)
+                           (.setCheckRequires CheckLevel/WARNING)
                            (.setDependencyOptions (doto (DependencyOptions.)
+                                                    (.setDependencyPruning false)
                                                     (.setDependencySorting true))))
         externs []
-        js-source-files (for [{:keys [js namespace]} compilation-maps]
-                          (SourceFile/fromCode (str (:name namespace)) js))]
+        js-source-files  (concat [(SourceFile/fromCode "goog/base.js" (slurp (deps/goog-resource "goog/base.js")))]
+                                 (for [{:keys [js namespace]} compilation-maps]
+                                   (SourceFile/fromCode (str (:name namespace)) js)))]
 
-    (let [res (.compile closure-compiler externs js-source-files compiler-options)]
-      (if (.success res)
-        (.toSource closure-compiler)
+    (let [res (-> (doto closure-compiler
+                    (.compile externs js-source-files compiler-options)
+                    ;;(.check)
+                    )
+                  (.getResult))]
 
-        ;;TODO: convert errors to ClojureScript data so they can be easily consumed by downstream toolin'
-        (doseq [e (.errors res)]
-          (prn (.-description e)))))))
+      ;;TODO: convert errors to ClojureScript data so they can be easily consumed by downstream toolin'
+      ;;(AKA the wonderful world of regex...)
+      (doseq [e (.errors res)]
+        (println (str (.-sourceName e) ": " (.-description e))))
+      ;; (doseq [e (.warnings res)]
+      ;;   (prn (.-description e)))
 
-
+      (when (.success res) ;;note: compilation is always successful unless .check is called.
+        (.toSource closure-compiler)))))
 
 
 (comment
@@ -44,16 +54,17 @@
   (def compile-cljs*
     (memoize compile-cljs))
 
-  (->> [;; (io/resource "cljs/core.cljs")
+  (->> [(io/resource "cljs/core.cljs")
         "sample/a.cljs" "sample/b.cljs"]
        (map slurp)
        ;;TODO: disable ClojureScript's built in warnings, which are printed during analysis.
        ;;Linting and warning emission should be separate functions that are invoked with sets of compilation maps.
        (map compile-cljs*)
+       (optimize)
+       (spit "foo.js")
 
-       optimize
-       println
-       ;;(spit "foo.js")
+       ;; first
+       ;; :namespace
        )
 
   )

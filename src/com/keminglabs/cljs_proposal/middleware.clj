@@ -55,7 +55,10 @@
       :expressions expressions
       :namespace namespace
       :provides #{(:name namespace)}
-      :requires (set (vals (:requires namespace))))))
+      :requires (let [requires (set (vals (:requires namespace)))]
+                  (if (= 'cljs.core (:name namespace))
+                    requires
+                    (conj requires 'cljs.core))))))
 
 (defn with-js
   "Adds :js key to the compilation map, from emission of :expressions."

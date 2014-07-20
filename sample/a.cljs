@@ -1,5 +1,8 @@
 (ns a
-  (:require [b :refer [x]]))
+  (:require [b :refer [two]]))
 
-(defn add-x [z]
-  (+ z x))
+(defn add-two [x]
+  (+ x two))
+
+(.log js/console (add-two 1))
+

@@ -12,23 +12,28 @@
 
 ;;with-analysis
 
-(let [{:keys [expressions namespace] :as m} (with-analysis {:cljs-src cljs-sample :forms '((+ 1 2) (+ 3 4))})]
+(let [{:keys [expressions namespace provides requires] :as m} (with-analysis {:cljs-src cljs-sample :forms '((+ 1 2) (+ 3 4))})]
   (is (every? identity #{expressions namespace}))
   (is (every? expression-map? expressions))
-  (is (namespace-map? namespace)))
+  (is (namespace-map? namespace))
+  (is provides #{})
+  (is requires #{}))
 
 ;;with a complex namespace
-(is (= (:namespace (with-analysis {:forms '((ns foo
-                                              "Awesome namespace"
-                                              (:require a.b)))}))
-       {:name 'foo
-        :doc "Awesome namespace"
-        :requires '{a.b a.b}
-        :require-macros nil
-        :uses nil
-        :use-macros nil
-        :imports nil
-        :excludes #{}}))
+(let [m (with-analysis {:forms '((ns foo
+                                   "Awesome namespace"
+                                   (:require a.b)))})]
+  (is (= (:namespace m)
+         {:name 'foo
+          :doc "Awesome namespace"
+          :requires '{a.b a.b}
+          :require-macros nil
+          :uses nil
+          :use-macros nil
+          :imports nil
+          :excludes #{}}))
+  (is (= #{'foo} (:provides m)))
+  (is (= #{'a.b} (:requires m))))
 
 
 

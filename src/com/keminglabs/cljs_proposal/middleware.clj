@@ -51,7 +51,11 @@
                           cljs-user-namespace-map)
                       (select-keys namespace-map-keys))]
 
-    (assoc m :expressions expressions :namespace namespace)))
+    (assoc m
+      :expressions expressions
+      :namespace namespace
+      :provides #{(:name namespace)}
+      :requires (set (vals (:requires namespace))))))
 
 (defn with-js
   "Adds :js key to the compilation map, from emission of :expressions."

@@ -24,9 +24,12 @@
   (let [closure-compiler (closure/make-closure-compiler)
 
         compiler-options (doto (closure/make-options opts)
-                           (.setClosurePass true)
-                           (.setCheckProvides CheckLevel/WARNING)
-                           (.setCheckRequires CheckLevel/WARNING)
+
+                           ;;TODO: the checkprovides and checkrequires should only be enabled for whitespace and simple modes.
+                           ;;As it turns out, Closure will cry wolf in advanced mode---it seems to get confused by its own name munging, lifting, &c.
+                           ;;(.setClosurePass false)
+                           ;; (.setCheckProvides CheckLevel/WARNING)
+                           ;; (.setCheckRequires CheckLevel/WARNING)
                            (.setDependencyOptions (doto (DependencyOptions.)
                                                     (.setDependencyPruning false)
                                                     ;;(.setEntryPoints ["a"])

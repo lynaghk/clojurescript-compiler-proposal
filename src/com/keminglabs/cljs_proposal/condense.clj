@@ -97,16 +97,18 @@
 
   (def compile-cljs*
     (memoize compile-cljs))
-  
+
   (->> [(io/resource "cljs/core.cljs")
-        "sample/a.cljs" "sample/b.cljs"]
+        ;;"sample/a.cljs" "sample/b.cljs"
+        "sample/macro_test.cljs"
+        ]
        (map slurp)
        ;;TODO: disable ClojureScript's built in warnings, which are printed during analysis.
        ;;Linting and warning emission should be separate functions that are invoked with sets of compilation maps.
        (map compile-cljs*)
        (index-by (comp first :provides))
        (merge goog-closure-namespaces)
-       (resolve-deps #{'a})
+       (resolve-deps #{'macro-test})
        (optimize)
        (spit "foo.js"))
 

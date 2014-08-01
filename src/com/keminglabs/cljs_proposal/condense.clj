@@ -16,11 +16,14 @@
 
 (defn optimize
   "Condenses given compilation maps into a single JavaScript string using the Google Closure compiler."
-  [compilation-maps]
-  ;;TODO: accept options
+  [compilation-maps opts]
+
+  (when (empty? compilation-maps)
+    (throw (Error. "No compilation maps provided to `optimize`")))
+
   (let [closure-compiler (closure/make-closure-compiler)
 
-        compiler-options (doto (closure/make-options {:optimizations :whitespace})
+        compiler-options (doto (closure/make-options opts)
                            (.setClosurePass true)
                            (.setCheckProvides CheckLevel/WARNING)
                            (.setCheckRequires CheckLevel/WARNING)

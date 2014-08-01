@@ -56,8 +56,11 @@
   "Returns the set of namespaces required but not provided by `compilation-maps`."
   [compilation-maps]
   (let [provides (set (mapcat :provides compilation-maps))
-        requires (set (mapcat :requires compilation-maps))]
-    (set/difference requires provides)))
+        requires (set (mapcat :requires compilation-maps))
+        missing (set/difference requires provides)]
+
+    (when-not (empty? missing)
+      missing)))
 
 
 (def goog-closure-namespaces

@@ -41,7 +41,7 @@
    All forms should be part of the same namespace."
   [compilation-map]
   (let [{:keys [forms] :as m} compilation-map
-        expressions (env/ensure
+        expressions (env/ensure ;;TODO: need to manually setup an environment that has compiled cljs.core so that `ana/core-name?` functions properly.
                      (binding [ana/*cljs-ns* 'cljs.user]
                        (doall (for [form forms]
                                 (ana/analyze (assoc (ana/empty-env) :ns (ana/get-namespace ana/*cljs-ns*))

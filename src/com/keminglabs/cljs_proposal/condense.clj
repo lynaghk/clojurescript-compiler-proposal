@@ -24,17 +24,16 @@
   (let [closure-compiler (closure/make-closure-compiler)
 
         compiler-options (doto (closure/make-options opts)
-
+                           (.setClosurePass true)
                            ;;TODO: the checkprovides and checkrequires should only be enabled for whitespace and simple modes.
                            ;;As it turns out, Closure will cry wolf in advanced mode---it seems to get confused by its own name munging, lifting, &c.
-                           ;;(.setClosurePass false)
                            ;; (.setCheckProvides CheckLevel/WARNING)
                            ;; (.setCheckRequires CheckLevel/WARNING)
                            (.setDependencyOptions (doto (DependencyOptions.)
                                                     (.setDependencyPruning false)
                                                     ;;(.setEntryPoints ["a"])
                                                     (.setDependencySorting true))))
-        externs          []
+        externs          (closure/load-externs opts)
         js-source-files  (concat [(SourceFile/fromCode "goog/base.js" (slurp (deps/goog-resource "goog/base.js")))]
                                  (for [{:keys [js provides]} compilation-maps]
                                    (SourceFile/fromCode (str (first provides)) js)))]
@@ -109,7 +108,8 @@
 
   (->> [(io/resource "cljs/core.cljs")
         ;;"sample/a.cljs" "sample/b.cljs"
-        "sample/macro_test.cljs"
+        ;;"sample/macro_test.cljs"
+        "sample/core_imports.cljs"
         ]
        (map slurp)
        ;;TODO: disable ClojureScript's built in warnings, which are printed during analysis.
@@ -117,8 +117,27 @@
        (map compile-cljs*)
        (index-by (comp first :provides))
        (merge goog-closure-namespaces)
-       (resolve-deps #{'macro-test})
-       (optimize)
+       (resolve-deps #{'core-imports})
+       (#(optimize % {:optimizations :whitespace}))
        (spit "foo.js"))
+
+
+
+  (->> [(io/resource "cljs/core.cljs")
+        ;;
+        ]
+       (map slurp)
+       (concat ["(ns foo) (.log js/console (rand))"])
+       ;;TODO: disable ClojureScript's built in warnings, which are printed during analysis.
+       ;;Linting and warning emission should be separate functions that are invoked with sets of compilation maps.
+       (map compile-cljs*)
+       (index-by (comp first :provides))
+       (merge goog-closure-namespaces)
+       (resolve-deps #{'foo})
+       (#(optimize % {:optimizations :whitespace}))
+       (spit "foo.js")
+
+       )
+
 
   )

@@ -3,16 +3,28 @@
             [clojure.set :as set]
             [clojure.java.io :as io]
             [cljs.closure :as closure]
+            [cljs.env :as env]
             [cljs.js-deps :as deps])
   (:import (com.google.javascript.jscomp DependencyOptions SourceFile CheckLevel)))
+
+
+(def env-with-cljs-core
+  "A ClojureScript compiler env that has been side-affected by analysis of cljs.core."
+  (let [env (env/default-compiler-env)]
+    (doall (-> {:cljs-src (slurp (io/resource "cljs/core.cljs"))}
+               (m/with-forms)
+               (m/with-analysis env)))
+    @env))
+
 
 (defn compile-cljs
   "Fully realized compilation map for provided ClojureScript string."
   [cljs-src]
   (-> {:cljs-src cljs-src}
       m/with-forms
-      m/with-analysis
+      (m/with-analysis env-with-cljs-core)
       m/with-js))
+
 
 (defn optimize
   "Condenses given compilation maps into a single JavaScript string using the Google Closure compiler."
@@ -95,10 +107,12 @@
                      (conj res m))))
           (recur ns (conj visited n) res))))))
 
+
 (defn index-by
   "Like group-by, but when you know your keys are unique"
   [f coll]
   (reduce (fn [m v] (assoc m (f v) v)) {} coll))
+
 
 (comment
   (require '[clojure.pprint :refer [pprint]])
@@ -106,11 +120,10 @@
   (def compile-cljs*
     (memoize compile-cljs))
 
-  (->> [(io/resource "cljs/core.cljs")
-        ;;"sample/a.cljs" "sample/b.cljs"
-        ;;"sample/macro_test.cljs"
-        "sample/core_imports.cljs"
-        ]
+  (->> (file-seq (java.io.File. "sample"))
+       (filter #(.endsWith (.getPath %) ".cljs"))
+       (concat [(io/resource "cljs/core.cljs")])
+
        (map slurp)
        ;;TODO: disable ClojureScript's built in warnings, which are printed during analysis.
        ;;Linting and warning emission should be separate functions that are invoked with sets of compilation maps.
@@ -118,9 +131,8 @@
        (index-by (comp first :provides))
        (merge goog-closure-namespaces)
        (resolve-deps #{'core-imports})
-       (#(optimize % {:optimizations :whitespace}))
+       (#(optimize % {:optimizations :advanced}))
        (spit "foo.js"))
-
 
 
   (->> [(io/resource "cljs/core.cljs")

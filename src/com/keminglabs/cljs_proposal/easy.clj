@@ -71,4 +71,38 @@
                :compiler {:optimizations :whitespace
                           :closure-warnings {:global-this :off}}}))
 
+
+  ;;Even in whitespace-only mode, Closure compiler takes about 900 ms.
+  ;;This is too long a delay for livereloadin', so lets try the following scheme:
+  ;;
+  ;; + first compile is Closure whitespace (for dependency sortin')
+  ;; + later compiles are for the changed namespace only, which should clobber everythin' in the previous namespace
+
+  ;;Try deliberate clobbering of namespaces
+
+  (def the-ns 'clobber-test)
+
+  (->> (c/optimize (compile-ns the-ns ["sample"])
+                   {:optimizations :whitespace})
+       (spit "foo.js"))
+
+  ;;Running `foo.js` should print "original main"
+
+  (def new-cljs
+    "
+
+ (ns clobber-test)
+
+ (defn main
+   []
+   (.log js/console \"clobbered main\"))
+
+")
+
+  (let [new-js (-> new-cljs
+                   com.keminglabs.cljs-proposal.easy/compile-cljs*
+                   :js)]
+    (spit "foo.js" new-js :append true))
+
+  ;;Running `foo.js` now prints "clobbered main"
   )

@@ -28,13 +28,16 @@
 (def compile-cljs*
   (memoize compile-cljs))
 
+(def cljs-resources*
+  (memoize util/cljs-resources))
 
 (defn compile-ns
   "Compiles namespace and all its dependencies, returning a set of compilation maps"
   ([ns]
      (compile-ns ns nil))
   ([ns extra-paths]
-     (let [compilation-maps (->> (util/cljs-resources extra-paths)
+     (let [compilation-maps (->> (cljs-resources*)
+                                 (concat (util/cljs-files extra-paths))
                                  (map slurp)
                                  (map compile-cljs*)
                                  (util/index-by (comp first :provides))
@@ -56,11 +59,16 @@
 
 
 (comment
+  (time
+    (do
+      (doall (compile-ns 'macro-test ["sample"]))
+      nil))
 
-  (compile! 'macro-test
-            {:source-paths ["sample"]
-             :output-to "foo.js"
-             :compiler {:optimizations  :advanced
-                        :closure-warnings {:global-this :off}}})
+  (time
+    (compile! 'macro-test
+              {:source-paths ["sample"]
+               :output-to "foo.js"
+               :compiler {:optimizations :whitespace
+                          :closure-warnings {:global-this :off}}}))
 
   )

@@ -11,21 +11,23 @@
 
 
 (defn cljs-resources
-  "All cljs resources in JARs and cljs files on classpath"
+  "All cljs resources in JARs on the classpath."
   []
   (->> (mapcat cp/filenames-in-jar (cp/classpath-jarfiles))
-       (concat (map #(.getPath %) (mapcat file-seq (cp/classpath-directories))))
        (filter #(.endsWith % ".cljs"))
        set
-       (map #(or (io/resource %) (io/file %)))))
+       (map io/resource)))
 
 
 (defn cljs-files
-  [paths]
-  (->> (map #(.getPath %) (mapcat #(file-seq (io/file %)) paths))
-       (filter #(.endsWith % ".cljs"))
-       set
-       (map io/file)))
+  "All cljs files under provided `paths` (defaults to classpath directories)."
+  ([]
+     (cljs-files (cp/classpath-directories)))
+  ([paths]
+     (->> (map #(.getPath %) (mapcat #(file-seq (io/file %)) paths))
+          (filter #(.endsWith % ".cljs"))
+          set
+          (map io/file))))
 
 
 (defn missing-namespaces

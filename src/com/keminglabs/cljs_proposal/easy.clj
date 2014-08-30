@@ -86,23 +86,29 @@
                    {:optimizations :whitespace})
        (spit "foo.js"))
 
-  ;;Running `foo.js` should print "original main"
+  ;;Running `foo.js` should print "original main" and two 2's
 
   (def new-cljs
     "
 
- (ns clobber-test)
+ (ns clobber-test
+   (:require [b :refer [two] :as b]))
 
  (defn main
    []
-   (.log js/console \"clobbered main\"))
+   (.log js/console \"clobbered main\")
+   (.log js/console two)
+   (.log js/console b/two))
 
-")
+
+ (ns b)
+
+ (def two 3)")
 
   (let [new-js (-> new-cljs
                    com.keminglabs.cljs-proposal.easy/compile-cljs*
                    :js)]
     (spit "foo.js" new-js :append true))
 
-  ;;Running `foo.js` now prints "clobbered main"
+  ;;Running `foo.js` now prints "clobbered main" and two 3's
   )

@@ -43,7 +43,10 @@
   [compilation-map compiler-env]
   (let [{:keys [forms] :as m} compilation-map
         expressions (env/with-compiler-env compiler-env
-                      (binding [ana/*cljs-ns* 'cljs.user]
+                      (binding [ana/*cljs-ns* 'cljs.user
+                                ana/*cljs-warnings* (assoc ana/*cljs-warnings*
+                                                      :undeclared-ns-form false)]
+
                         (doall (for [form forms]
                                  (ana/analyze (assoc (ana/empty-env) :ns (ana/get-namespace ana/*cljs-ns*))
                                               form)))))
